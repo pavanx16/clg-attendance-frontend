@@ -1,486 +1,194 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Dashboard</title>
-
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Attendance Dashboard</title>
 <style>
-    * {
-        box-sizing: border-box;
-    }
+  :root{
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --accent:#2563eb;
+    --good:#16a34a;
+    --mid:#d97706;
+    --low:#dc2626;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;line-height:1.5;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:28px 16px 64px}
 
-    body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        background: #f5f7fb;
-        color: #172033;
-    }
+  h1{margin:0;font-size:1.5rem;font-weight:650;letter-spacing:-.01em}
+  .sub{margin:4px 0 20px;color:var(--muted);font-size:.9rem}
 
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 32px 20px 50px;
-    }
+  input[type=text]{
+    width:100%;padding:12px 14px;font:inherit;color:var(--text);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    outline:none;margin-bottom:20px;
+  }
+  input[type=text]:focus{border-color:var(--accent)}
+  input[type=text]::placeholder{color:var(--muted)}
 
-    .header {
-        margin-bottom: 24px;
-    }
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    margin-bottom:16px;overflow:hidden;
+  }
+  .top{
+    padding:16px;border-bottom:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;
+  }
+  .name{font-weight:600}
+  .email{color:var(--muted);font-size:.85rem;margin-left:8px;word-break:break-all}
+  .time{color:var(--muted);font-size:.78rem}
 
-    .header h1 {
-        margin: 0 0 8px;
-        font-size: 32px;
-    }
+  .stats{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    border-bottom:1px solid var(--line);
+  }
+  .stat{padding:14px 16px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat span{display:block;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+  .stat b{font-size:1.25rem;font-weight:600}
 
-    .header p {
-        margin: 0;
-        color: #687386;
-        font-size: 15px;
-    }
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th{
+    text-align:left;padding:10px 16px;color:var(--muted);font-size:.75rem;
+    text-transform:uppercase;letter-spacing:.04em;font-weight:600;border-bottom:1px solid var(--line);
+  }
+  td{padding:11px 16px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  td.num{text-align:right;white-space:nowrap}
+  th.num{text-align:right}
+  .pct{font-weight:600}
+  .good{color:var(--good)} .mid{color:var(--mid)} .low{color:var(--low)}
+  .none{padding:16px;color:var(--muted);font-size:.9rem}
 
-    .search-box {
-        margin-bottom: 24px;
-    }
+  .empty,.no-results{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:40px 16px;text-align:center;color:var(--muted);
+  }
+  .empty b,.no-results b{display:block;color:var(--text);margin-bottom:6px;font-size:1rem}
+  .no-results{display:none}
 
-    .search-box input {
-        width: 100%;
-        padding: 14px 16px;
-        border: 1px solid #dfe4ec;
-        border-radius: 10px;
-        background: white;
-        font-size: 15px;
-        outline: none;
-    }
-
-    .search-box input:focus {
-        border-color: #7b879c;
-    }
-
-    .user-card {
-        background: white;
-        border: 1px solid #e4e8ef;
-        border-radius: 16px;
-        margin-bottom: 28px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-    }
-
-    .user-header {
-        padding: 24px;
-        border-bottom: 1px solid #edf0f4;
-    }
-
-    .user-name {
-        margin: 0 0 8px;
-        font-size: 23px;
-    }
-
-    .user-email {
-        margin: 0;
-        color: #687386;
-        font-size: 14px;
-    }
-
-    .updated {
-        margin-top: 10px;
-        color: #8992a3;
-        font-size: 13px;
-    }
-
-    .section {
-        padding: 24px;
-    }
-
-    .section-title {
-        margin: 0 0 16px;
-        font-size: 18px;
-    }
-
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 14px;
-    }
-
-    .stat {
-        padding: 18px;
-        background: #f8f9fc;
-        border: 1px solid #edf0f4;
-        border-radius: 12px;
-    }
-
-    .stat-label {
-        display: block;
-        color: #737d8f;
-        font-size: 13px;
-        margin-bottom: 9px;
-    }
-
-    .stat-value {
-        font-size: 24px;
-        font-weight: 700;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-        border: 1px solid #e6e9ef;
-        border-radius: 12px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 650px;
-    }
-
-    th {
-        background: #f8f9fc;
-        color: #596477;
-        font-size: 13px;
-        text-align: left;
-        padding: 14px 16px;
-        border-bottom: 1px solid #e6e9ef;
-    }
-
-    td {
-        padding: 15px 16px;
-        border-bottom: 1px solid #edf0f4;
-        font-size: 14px;
-    }
-
-    tr:last-child td {
-        border-bottom: 0;
-    }
-
-    .subject {
-        font-weight: 600;
-    }
-
-    .percentage {
-        font-weight: 700;
-    }
-
-    .no-results {
-        display: none;
-        text-align: center;
-        padding: 40px;
-        color: #737d8f;
-        background: white;
-        border: 1px solid #e4e8ef;
-        border-radius: 16px;
-    }
-
-    .empty {
-        background: white;
-        border: 1px solid #e4e8ef;
-        border-radius: 16px;
-        padding: 60px 20px;
-        text-align: center;
-    }
-
-    .empty h2 {
-        margin: 0 0 8px;
-    }
-
-    .empty p {
-        margin: 0;
-        color: #737d8f;
-    }
-
-    @media (max-width: 900px) {
-        .stats {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 600px) {
-        .container {
-            padding: 22px 14px 40px;
-        }
-
-        .header h1 {
-            font-size: 26px;
-        }
-
-        .user-header,
-        .section {
-            padding: 18px;
-        }
-
-        .stats {
-            grid-template-columns: 1fr;
-        }
-
-        .stat-value {
-            font-size: 22px;
-        }
-    }
+  @media (max-width:600px){
+    th:nth-child(1),td:nth-child(1){display:none}
+    th,td{padding-left:12px;padding-right:12px}
+    .stat{border-right:none;border-bottom:1px solid var(--line);padding:12px}
+  }
 </style>
-
-
 </head>
-
 <body>
+<div class="wrap">
 
-<div class="container">
+  <h1>Attendance Dashboard</h1>
+  <p class="sub">{{ users|length }} user(s) &middot; updates every 60s</p>
 
-
-<div class="header">
-    <h1>Attendance Dashboard</h1>
-
-    <p>
-        Attendance information for {{ users|length }} user(s)
-    </p>
-</div>
-
-
-{% if users %}
-
-    <div class="search-box">
-        <input
-            type="text"
-            id="userSearch"
-            placeholder="Search users by username or email..."
-            autocomplete="off"
-        >
-    </div>
-
+  {% if users %}
+    <input type="text" id="userSearch" placeholder="Search by username or email..." autocomplete="off" />
 
     <div id="usersContainer">
+      {% for user in users %}
+        {% set stats = user.statistics|default({}) %}
+        <div class="card" data-search="{{ user.username }} {{ user.email }}">
 
-        {% for user in users %}
+          <div class="top">
+            <div><span class="name">{{ user.username }}</span><span class="email">{{ user.email }}</span></div>
+            {% if user.scraped_at %}
+              <div class="time">Updated <span class="scraped-time" data-time="{{ user.scraped_at.isoformat() }}">{{ user.scraped_at.strftime("%d %b %Y, %I:%M %p") }}</span></div>
+            {% else %}
+              <div class="time">Updated: Never</div>
+            {% endif %}
+          </div>
 
-            {% set stats = user.statistics|default({}) %}
+          <div class="stats">
+            <div class="stat"><span>Total</span><b>{{ stats.total_attendances|default(0) }}</b></div>
+            <div class="stat"><span>Present</span><b>{{ stats.total_present|default(0) }}</b></div>
+            <div class="stat"><span>Overall</span><b>{{ stats.overall_percentage|default(0) }}%</b></div>
+            <div class="stat"><span>Average</span><b>{{ stats.avg_percentage|default(0) }}%</b></div>
+            <div class="stat"><span>Subjects</span><b>{{ stats.subjects_count|default(0) }}</b></div>
+          </div>
 
-            <div
-                class="user-card"
-                data-search="{{ user.username }} {{ user.email }}"
-            >
+          {% if user.subjects %}
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Subject</th><th class="num">Total</th><th class="num">Present</th><th class="num">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for subject in user.subjects %}
+                  {% set p = subject.percentage|float %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ subject.subject }}</td>
+                    <td class="num">{{ subject.total_attendances }}</td>
+                    <td class="num">{{ subject.total_present }}</td>
+                    <td class="num pct {% if p >= 75 %}good{% elif p >= 60 %}mid{% else %}low{% endif %}">{{ subject.percentage }}%</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="none">No subject attendance data available.</div>
+          {% endif %}
 
-                <div class="user-header">
-
-                    <h2 class="user-name">
-                        {{ user.username }}
-                    </h2>
-
-                    <p class="user-email">
-                        {{ user.email }}
-                    </p>
-
-                    {% if user.scraped_at %}
-                        <div class="updated">
-                            Last updated:
-                            {{ user.scraped_at.strftime("%d %b %Y, %I:%M %p") }}
-                        </div>
-                    {% endif %}
-
-                </div>
-
-
-                <div class="section">
-
-                    <h3 class="section-title">
-                        Statistics
-                    </h3>
-
-                    <div class="stats">
-
-                        <div class="stat">
-                            <span class="stat-label">
-                                Total Attendances
-                            </span>
-
-                            <span class="stat-value">
-                                {{ stats.total_attendances|default(0) }}
-                            </span>
-                        </div>
-
-
-                        <div class="stat">
-                            <span class="stat-label">
-                                Total Present
-                            </span>
-
-                            <span class="stat-value">
-                                {{ stats.total_present|default(0) }}
-                            </span>
-                        </div>
-
-
-                        <div class="stat">
-                            <span class="stat-label">
-                                Overall Percentage
-                            </span>
-
-                            <span class="stat-value">
-                                {{ stats.overall_percentage|default(0) }}%
-                            </span>
-                        </div>
-
-
-                        <div class="stat">
-                            <span class="stat-label">
-                                Average Percentage
-                            </span>
-
-                            <span class="stat-value">
-                                {{ stats.avg_percentage|default(0) }}%
-                            </span>
-                        </div>
-
-
-                        <div class="stat">
-                            <span class="stat-label">
-                                Subjects
-                            </span>
-
-                            <span class="stat-value">
-                                {{ stats.subjects_count|default(0) }}
-                            </span>
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="section">
-
-                    <h3 class="section-title">
-                        Subject Attendance
-                    </h3>
-
-                    {% if user.subjects %}
-
-                        <div class="table-wrapper">
-
-                            <table>
-
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Subject</th>
-                                        <th>Total Attendances</th>
-                                        <th>Present</th>
-                                        <th>Percentage</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-
-                                    {% for subject in user.subjects %}
-
-                                        <tr>
-
-                                            <td>
-                                                {{ loop.index }}
-                                            </td>
-
-                                            <td class="subject">
-                                                {{ subject.subject }}
-                                            </td>
-
-                                            <td>
-                                                {{ subject.total_attendances }}
-                                            </td>
-
-                                            <td>
-                                                {{ subject.total_present }}
-                                            </td>
-
-                                            <td class="percentage">
-                                                {{ subject.percentage }}%
-                                            </td>
-
-                                        </tr>
-
-                                    {% endfor %}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    {% else %}
-
-                        <p>
-                            No subject attendance data available.
-                        </p>
-
-                    {% endif %}
-
-                </div>
-
-            </div>
-
-        {% endfor %}
-
+        </div>
+      {% endfor %}
     </div>
-
 
     <div id="noResults" class="no-results">
-        <strong>No users found</strong>
-        <p>Try searching with a different username or email.</p>
+      <b>No users found</b>
+      Try a different username or email.
     </div>
-
-
-{% else %}
-
+  {% else %}
     <div class="empty">
-
-        <h2>
-            No Attendance Data
-        </h2>
-
-        <p>
-            Attendance information will appear here once data is available.
-        </p>
-
+      <b>No attendance data</b>
+      Data will appear here once available.
     </div>
-
-{% endif %}
-``
+  {% endif %}
 
 </div>
 
 <script>
-    const searchInput = document.getElementById("userSearch");
-    const userCards = document.querySelectorAll(".user-card");
-    const noResults = document.getElementById("noResults");
+  const searchInput = document.getElementById("userSearch");
+  const cards = document.querySelectorAll(".card");
+  const noResults = document.getElementById("noResults");
 
-    if (searchInput) {
-        searchInput.addEventListener("input", function () {
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      const q = this.value.toLowerCase().trim();
+      let visible = 0;
+      cards.forEach(function (c) {
+        const ok = c.getAttribute("data-search").toLowerCase().includes(q);
+        c.style.display = ok ? "" : "none";
+        if (ok) visible++;
+      });
+      noResults.style.display = (visible === 0 && q !== "") ? "block" : "none";
+    });
+  }
 
-            const searchText = this.value.toLowerCase().trim();
-            let visibleUsers = 0;
+  document.querySelectorAll(".scraped-time").forEach(function (el) {
+    const raw = el.getAttribute("data-time");
+    if (!raw) return;
+    const d = new Date(/Z|[+-]\d{2}:?\d{2}$/.test(raw) ? raw : raw + "Z");
+    if (isNaN(d.getTime())) return;
+    el.textContent = d.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: true
+    });
+  });
 
-            userCards.forEach(function (card) {
-
-                const userData = card
-                    .getAttribute("data-search")
-                    .toLowerCase();
-
-                if (userData.includes(searchText)) {
-                    card.style.display = "";
-                    visibleUsers++;
-                } else {
-                    card.style.display = "none";
-                }
-
-            });
-
-            if (visibleUsers === 0 && searchText !== "") {
-                noResults.style.display = "block";
-            } else {
-                noResults.style.display = "none";
-            }
-
-        });
-    }
+  setInterval(function () {
+    if (document.activeElement !== searchInput && !(searchInput && searchInput.value)) location.reload();
+  }, 60000);
 </script>
-
 </body>
 </html>
