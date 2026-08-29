@@ -28,7 +28,13 @@ if not MONGODB_URI:
 GITHUB_PAT = os.getenv("GITHUB_PAT")
 GITHUB_OWNER = os.getenv("GITHUB_OWNER", "pavanx16")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "githubaction")
-WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "scrape.yml")
+WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "main.yml")
+
+# Swagger UI / ReDoc paths — set to "" or "none" in .env to disable in production
+DOCS_URL = os.getenv("DOCS_URL", "/docs")
+REDOC_URL = os.getenv("REDOC_URL", "/redoc")
+DOCS_URL = None if DOCS_URL.lower() in ("", "none", "disabled") else DOCS_URL
+REDOC_URL = None if REDOC_URL.lower() in ("", "none", "disabled") else REDOC_URL
 
 # --------------------------------------------------
 # MongoDB Connection Pool
@@ -89,26 +95,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"✗ MongoDB connection failed: {e}")
 
-    # TESTING: fires every 10 minutes, all day, so you can confirm the chain works
-    # without waiting for the 11-18 IST window. Swap back to the hourly version
-    # below once confirmed.
+    # PRODUCTION: fires once every hour, 11:00-18:00 IST, every day.
     scheduler.add_job(
         trigger_scrape_workflow,
-        CronTrigger(minute="*/10", timezone=ZoneInfo("Asia/Kolkata")),
+        CronTrigger(hour="11-18", minute=0, timezone=ZoneInfo("Asia/Kolkata")),
         id="trigger_scrape",
         replace_existing=True,
         misfire_grace_time=300,
     )
-    # PRODUCTION (use this once testing confirms it works):
-    # scheduler.add_job(
-    #     trigger_scrape_workflow,
-    #     CronTrigger(hour="11-18", minute=0, timezone=ZoneInfo("Asia/Kolkata")),
-    #     id="trigger_scrape",
-    #     replace_existing=True,
-    #     misfire_grace_time=300,
-    # )
     scheduler.start()
-    logger.info("✓ Scheduler started — TEST MODE: triggering every 10 minutes")
+    logger.info("✓ Scheduler started — will trigger scrape hourly, 11:00-18:00 IST")
 
     yield
 
@@ -125,6 +121,8 @@ app = FastAPI(
     title="Attendance Dashboard",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=DOCS_URL,
+    redoc_url=REDOC_URL,
 )
 templates = Jinja2Templates(directory="templates")
 
