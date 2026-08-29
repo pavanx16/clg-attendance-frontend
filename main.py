@@ -1,97 +1,138 @@
 import os
+import logging
+from contextlib import asynccontextmanager
+from zoneinfo import ZoneInfo
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pymongo import MongoClient
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------
 # Configuration
 # --------------------------------------------------
-
 MONGODB_URI = os.getenv("MONGODB_URI")
 DB_NAME = os.getenv("DB_NAME", "attendance_db")
-
 if not MONGODB_URI:
     raise ValueError("MONGODB_URI is not set in .env")
 
+GITHUB_PAT = os.getenv("GITHUB_PAT")
+GITHUB_OWNER = os.getenv("GITHUB_OWNER", "pavanx16")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "githubaction")
+WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "scrape.yml")
 
 # --------------------------------------------------
 # MongoDB Connection Pool
 # --------------------------------------------------
-
 client = MongoClient(
     MONGODB_URI,
-
-    # Connection pool
     maxPoolSize=50,
     minPoolSize=5,
-
-    # Connection timeout
     serverSelectionTimeoutMS=5000,
     connectTimeoutMS=5000,
-
-    # Socket timeout
     socketTimeoutMS=10000,
-
-    # Keep connections alive
     maxIdleTimeMS=60000,
 )
-
 db = client[DB_NAME]
-
 attendance_collection = db["attendance_results"]
 
+# --------------------------------------------------
+# GitHub workflow trigger
+# --------------------------------------------------
+async def trigger_scrape_workflow():
+    if not GITHUB_PAT:
+        logger.error("GITHUB_PAT not set — cannot trigger workflow")
+        return
+
+    url = (
+        f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
+        f"/actions/workflows/{WORKFLOW_FILE}/dispatches"
+    )
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {GITHUB_PAT}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as http_client:
+            resp = await http_client.post(url, headers=headers, json={"ref": "main"})
+
+        if resp.status_code == 204:
+            logger.info("✓ Triggered scrape workflow successfully")
+        else:
+            logger.error(f"✗ Failed to trigger workflow: {resp.status_code} {resp.text}")
+    except Exception as e:
+        logger.error(f"✗ Exception while triggering workflow: {e}")
+
+scheduler = AsyncIOScheduler(timezone=ZoneInfo("Asia/Kolkata"))
+
+# --------------------------------------------------
+# FastAPI lifespan (startup/shutdown)
+# --------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    try:
+        client.admin.command("ping")
+        logger.info("✓ Connected to MongoDB Atlas")
+        logger.info("✓ MongoDB connection pool ready (min=5, max=50)")
+    except Exception as e:
+        logger.error(f"✗ MongoDB connection failed: {e}")
+
+    # TESTING: fires every 10 minutes, all day, so you can confirm the chain works
+    # without waiting for the 11-18 IST window. Swap back to the hourly version
+    # below once confirmed.
+    scheduler.add_job(
+        trigger_scrape_workflow,
+        CronTrigger(minute="*/10", timezone=ZoneInfo("Asia/Kolkata")),
+        id="trigger_scrape",
+        replace_existing=True,
+        misfire_grace_time=300,
+    )
+    # PRODUCTION (use this once testing confirms it works):
+    # scheduler.add_job(
+    #     trigger_scrape_workflow,
+    #     CronTrigger(hour="11-18", minute=0, timezone=ZoneInfo("Asia/Kolkata")),
+    #     id="trigger_scrape",
+    #     replace_existing=True,
+    #     misfire_grace_time=300,
+    # )
+    scheduler.start()
+    logger.info("✓ Scheduler started — TEST MODE: triggering every 10 minutes")
+
+    yield
+
+    # Shutdown
+    scheduler.shutdown()
+    client.close()
+    logger.info("✓ MongoDB connection pool closed")
+    logger.info("✓ Scheduler shut down")
 
 # --------------------------------------------------
 # FastAPI
 # --------------------------------------------------
-
 app = FastAPI(
     title="Attendance Dashboard",
     version="1.0.0",
+    lifespan=lifespan,
 )
-
 templates = Jinja2Templates(directory="templates")
-
-
-# --------------------------------------------------
-# Startup
-# --------------------------------------------------
-
-@app.on_event("startup")
-def startup_db():
-    try:
-        client.admin.command("ping")
-        print("✓ Connected to MongoDB Atlas")
-        print("✓ MongoDB connection pool ready")
-        print("  Min connections: 5")
-        print("  Max connections: 50")
-
-    except Exception as e:
-        print(f"✗ MongoDB connection failed: {e}")
-
-
-# --------------------------------------------------
-# Shutdown
-# --------------------------------------------------
-
-@app.on_event("shutdown")
-def shutdown_db():
-    client.close()
-    print("✓ MongoDB connection pool closed")
-
 
 # --------------------------------------------------
 # Dashboard
 # --------------------------------------------------
-
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
-
     users = list(
         attendance_collection.find(
             {},
@@ -106,7 +147,6 @@ def dashboard(request: Request):
             },
         ).sort("username", 1)
     )
-
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -114,3 +154,22 @@ def dashboard(request: Request):
             "users": users,
         },
     )
+
+# --------------------------------------------------
+# Scheduler status / manual trigger (for testing)
+# --------------------------------------------------
+@app.get("/scheduler-status")
+def scheduler_status():
+    jobs = scheduler.get_jobs()
+    return {
+        "running": scheduler.running,
+        "jobs": [
+            {"id": j.id, "next_run": str(j.next_run_time)} for j in jobs
+        ],
+    }
+
+@app.post("/trigger-scrape-now")
+async def trigger_scrape_now():
+    """Manually fire the workflow trigger, for testing without waiting for the schedule."""
+    await trigger_scrape_workflow()
+    return {"status": "triggered — check GitHub Actions tab"}
