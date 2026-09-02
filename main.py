@@ -1,18 +1,18 @@
-import os
 import logging
+import os
 from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
 
 import httpx
-from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from pymongo import MongoClient
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from pymongo import MongoClient
 
-load_dotenv()
+_ = load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -171,3 +171,11 @@ async def trigger_scrape_now():
     """Manually fire the workflow trigger, for testing without waiting for the schedule."""
     await trigger_scrape_workflow()
     return {"status": "triggered — check GitHub Actions tab"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.get("/users/login")
+def redirect_to_login():
+    return RedirectResponse(url="/")
