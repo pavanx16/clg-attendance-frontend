@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -31,10 +33,10 @@ GITHUB_REPO = os.getenv("GITHUB_REPO", "githubaction")
 WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "main.yml")
 
 # Swagger UI / ReDoc paths — set to "" or "none" in .env to disable in production
-DOCS_URL = os.getenv("DOCS_URL", "/docs")
-REDOC_URL = os.getenv("REDOC_URL", "/redoc")
-DOCS_URL = None if DOCS_URL.lower() in ("", "none", "disabled") else DOCS_URL
-REDOC_URL = None if REDOC_URL.lower() in ("", "none", "disabled") else REDOC_URL
+docs_url = os.getenv("DOCS_URL", "/docs")
+redoc_url = os.getenv("REDOC_URL", "/redoc")
+DOCS_URL = None if docs_url.lower() in ("", "none", "disabled") else docs_url
+REDOC_URL = None if redoc_url.lower() in ("", "none", "disabled") else redoc_url
 
 # --------------------------------------------------
 # MongoDB Connection Pool
@@ -77,7 +79,11 @@ async def trigger_scrape_workflow():
             logger.info("✓ Triggered scrape workflow successfully")
         else:
             logger.error(f"✗ Failed to trigger workflow: {resp.status_code} {resp.text}")
-    except Exception as e:
+
+    except httpx.TimeoutException as e:
+        logger.error(f"✗ Timeout while triggering workflow: {e}")
+
+    except httpx.HTTPError as e:
         logger.error(f"✗ Exception while triggering workflow: {e}")
 
 scheduler = AsyncIOScheduler(timezone=ZoneInfo("Asia/Kolkata"))
@@ -92,7 +98,7 @@ async def lifespan(app: FastAPI):
         client.admin.command("ping")
         logger.info("✓ Connected to MongoDB Atlas")
         logger.info("✓ MongoDB connection pool ready (min=5, max=50)")
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.error(f"✗ MongoDB connection failed: {e}")
 
     # PRODUCTION: fires once every hour, 11:00-18:00 IST, every day.
@@ -172,7 +178,7 @@ async def trigger_scrape_now():
     await trigger_scrape_workflow()
     return {"status": "triggered — check GitHub Actions tab"}
 
-@app.get("/health")
+@app.head("/health")
 def health():
     return {"status": "ok"}
 
