@@ -185,3 +185,7 @@ def health():
 @app.get("/users/login")
 def redirect_to_login():
     return RedirectResponse(url="/")
+
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    return RedirectResponse("/", status_code=302)
