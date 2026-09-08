@@ -178,14 +178,6 @@ async def trigger_scrape_now():
     await trigger_scrape_workflow()
     return {"status": "triggered — check GitHub Actions tab"}
 
-@app.head("/health")
-def health():
-    return {"status": "ok"}
-
-@app.get("/users/login")
-def redirect_to_login():
-    return RedirectResponse(url="/")
-
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
     return RedirectResponse("/", status_code=302)
