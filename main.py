@@ -9,15 +9,23 @@ import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import Form, FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from pymongo import MongoClient
+from typing_extensions import Literal
 
 _ = load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class User(BaseModel):
+    username: str
+    password: str
+    track: Literal["AI/ML", "SECURITY", "RESEARCH"] = "AI/ML"
+    status: Literal["active", "inactive"] = "active"
 
 # --------------------------------------------------
 # Configuration
@@ -52,6 +60,7 @@ client = MongoClient(
 )
 db = client[DB_NAME]
 attendance_collection = db["attendance_results"]
+users_collection = db["users"]
 
 # --------------------------------------------------
 # GitHub workflow trigger
@@ -181,3 +190,21 @@ async def trigger_scrape_now():
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
     return RedirectResponse("/", status_code=302)
+
+@app.post("/add_user")
+async def add_user(
+    username: str = Form(...),
+    password: str = Form(...),
+    track: Literal["AI/ML", "SECURITY", "RESEARCH"] = Form(...),
+    status: Literal["active", "inactive"] = Form("active"),
+):
+    user = User(
+        username=username,
+        password=password,
+        track=track,
+        status=status
+    )
+
+    users_collection.insert_one(user.model_dump())
+
+    return {"status": "user added"}
