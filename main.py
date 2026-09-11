@@ -195,7 +195,7 @@ async def catch_all(full_path: str):
 async def add_user(
     username: str = Form(...),
     password: str = Form(...),
-    track: Literal["AI/ML", "SECURITY", "RESEARCH"] = Form(...),
+    track: Literal["AI/ML", "SECURITY", "RESEARCH", "SECURITY+OJT"] = Form(...),
     status: Literal["active", "inactive"] = Form("active"),
 ):
     user = User(
