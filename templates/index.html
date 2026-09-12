@@ -1,194 +1,907 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Attendance Dashboard</title>
-<style>
-  :root{
-    --bg:#f6f7f9;
-    --card:#ffffff;
-    --text:#111827;
-    --muted:#6b7280;
-    --line:#e5e7eb;
-    --accent:#2563eb;
-    --good:#16a34a;
-    --mid:#d97706;
-    --low:#dc2626;
-    --r:12px;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    font-size:15px;line-height:1.5;
-  }
-  .wrap{max-width:900px;margin:0 auto;padding:28px 16px 64px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  h1{margin:0;font-size:1.5rem;font-weight:650;letter-spacing:-.01em}
-  .sub{margin:4px 0 20px;color:var(--muted);font-size:.9rem}
+    <title>Attendance Dashboard</title>
 
-  input[type=text]{
-    width:100%;padding:12px 14px;font:inherit;color:var(--text);
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    outline:none;margin-bottom:20px;
-  }
-  input[type=text]:focus{border-color:var(--accent)}
-  input[type=text]::placeholder{color:var(--muted)}
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  .card{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-    margin-bottom:16px;overflow:hidden;
-  }
-  .top{
-    padding:16px;border-bottom:1px solid var(--line);
-    display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;
-  }
-  .name{font-weight:600}
-  .email{color:var(--muted);font-size:.85rem;margin-left:8px;word-break:break-all}
-  .time{color:var(--muted);font-size:.78rem}
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+            padding: 30px;
+        }
 
-  .stats{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-    border-bottom:1px solid var(--line);
-  }
-  .stat{padding:14px 16px;border-right:1px solid var(--line)}
-  .stat:last-child{border-right:none}
-  .stat span{display:block;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
-  .stat b{font-size:1.25rem;font-weight:600}
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-  table{width:100%;border-collapse:collapse;font-size:.9rem}
-  th{
-    text-align:left;padding:10px 16px;color:var(--muted);font-size:.75rem;
-    text-transform:uppercase;letter-spacing:.04em;font-weight:600;border-bottom:1px solid var(--line);
-  }
-  td{padding:11px 16px;border-bottom:1px solid var(--line)}
-  tr:last-child td{border-bottom:none}
-  td.num{text-align:right;white-space:nowrap}
-  th.num{text-align:right}
-  .pct{font-weight:600}
-  .good{color:var(--good)} .mid{color:var(--mid)} .low{color:var(--low)}
-  .none{padding:16px;color:var(--muted);font-size:.9rem}
+        /* =========================================================
+           HEADER
+        ========================================================= */
 
-  .empty,.no-results{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-    padding:40px 16px;text-align:center;color:var(--muted);
-  }
-  .empty b,.no-results b{display:block;color:var(--text);margin-bottom:6px;font-size:1rem}
-  .no-results{display:none}
+        .header {
+            margin-bottom: 25px;
+        }
 
-  @media (max-width:600px){
-    th:nth-child(1),td:nth-child(1){display:none}
-    th,td{padding-left:12px;padding-right:12px}
-    .stat{border-right:none;border-bottom:1px solid var(--line);padding:12px}
-  }
-</style>
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .header p {
+            margin-top: 6px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* =========================================================
+           SEARCH
+        ========================================================= */
+
+        .search-box {
+            margin-bottom: 25px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        .search-box input:focus {
+            border-color: #6b7280;
+        }
+
+        /* =========================================================
+           USER CARD
+        ========================================================= */
+
+        .user-card {
+            background: white;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        /* =========================================================
+           USER HEADER
+        ========================================================= */
+
+        .user-header {
+            padding: 22px 25px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .user-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .user-email {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .scraped-time {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* =========================================================
+           STATISTICS
+        ========================================================= */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .stat {
+            padding: 20px;
+            text-align: center;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .stat:last-child {
+            border-right: none;
+        }
+
+        .stat span {
+            display: block;
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat b {
+            font-size: 22px;
+            color: #111827;
+        }
+
+        /* =========================================================
+           OVERALL / AVERAGE 75% SECTION
+        ========================================================= */
+
+        .overall-plans {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .overall-plan {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .overall-plan-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6b7280;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .overall-plan-value {
+            font-size: 21px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .overall-plan-value.good {
+            color: #15803d;
+        }
+
+        .overall-plan-value.low {
+            color: #dc2626;
+        }
+
+        .overall-plan-description {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* =========================================================
+           SUBJECT SECTION
+        ========================================================= */
+
+        .subjects-section {
+            padding: 25px;
+        }
+
+        .subjects-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+
+        /* =========================================================
+           TABLE
+        ========================================================= */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 13px 15px;
+            text-align: left;
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .num {
+            text-align: center;
+        }
+
+        /* =========================================================
+           SUBJECT ATTENDANCE
+        ========================================================= */
+
+        .attendance-cell {
+            text-align: center;
+        }
+
+        .pct {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .pct.good {
+            color: #15803d;
+        }
+
+        .pct.mid {
+            color: #d97706;
+        }
+
+        .pct.low {
+            color: #dc2626;
+        }
+
+        .attendance-plan {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .attendance-plan.good {
+            color: #15803d;
+        }
+
+        .attendance-plan.low {
+            color: #dc2626;
+        }
+
+        .attendance-plan.none {
+            color: #9ca3af;
+        }
+
+        /* =========================================================
+           NO DATA
+        ========================================================= */
+
+        .no-data {
+            padding: 30px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .no-users {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        /* =========================================================
+           FOOTER
+        ========================================================= */
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 900px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .stat:nth-child(3) {
+                border-right: none;
+            }
+
+            .overall-plans {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat {
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .stat:nth-child(2n) {
+                border-right: none;
+            }
+
+            .subjects-section {
+                padding: 15px;
+            }
+
+            .user-header {
+                padding: 18px;
+            }
+
+            .overall-plans {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-<div class="wrap">
 
-  <h1>Attendance Dashboard</h1>
-  <p class="sub">{{ users|length }} user(s) &middot; updates every 60s</p>
+<div class="container">
 
-  {% if users %}
-    <input type="text" id="userSearch" placeholder="Search by username or email..." autocomplete="off" />
+    <!-- =========================================================
+         HEADER
+    ========================================================= -->
+
+    <div class="header">
+        <h1>Attendance Dashboard</h1>
+        <p>Student attendance tracking and 75% attendance planning</p>
+    </div>
+
+
+    <!-- =========================================================
+         SEARCH
+    ========================================================= -->
+
+    <div class="search-box">
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search by username or email..."
+            onkeyup="searchUsers()"
+        >
+    </div>
+
+
+    <!-- =========================================================
+         USERS
+    ========================================================= -->
 
     <div id="usersContainer">
-      {% for user in users %}
-        {% set stats = user.statistics|default({}) %}
-        <div class="card" data-search="{{ user.username }} {{ user.email }}">
 
-          <div class="top">
-            <div><span class="name">{{ user.username }}</span><span class="email">{{ user.email }}</span></div>
-            {% if user.scraped_at %}
-              <div class="time">Updated <span class="scraped-time" data-time="{{ user.scraped_at.isoformat() }}">{{ user.scraped_at.strftime("%d %b %Y, %I:%M %p") }}</span></div>
-            {% else %}
-              <div class="time">Updated: Never</div>
-            {% endif %}
-          </div>
+        {% if users %}
 
-          <div class="stats">
-            <div class="stat"><span>Total</span><b>{{ stats.total_attendances|default(0) }}</b></div>
-            <div class="stat"><span>Present</span><b>{{ stats.total_present|default(0) }}</b></div>
-            <div class="stat"><span>Overall</span><b>{{ stats.overall_percentage|default(0) }}%</b></div>
-            <div class="stat"><span>Average</span><b>{{ stats.avg_percentage|default(0) }}%</b></div>
-            <div class="stat"><span>Subjects</span><b>{{ stats.subjects_count|default(0) }}</b></div>
-          </div>
+            {% for user in users %}
 
-          {% if user.subjects %}
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th><th>Subject</th><th class="num">Total</th><th class="num">Present</th><th class="num">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for subject in user.subjects %}
-                  {% set p = subject.percentage|float %}
-                  <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ subject.subject }}</td>
-                    <td class="num">{{ subject.total_attendances }}</td>
-                    <td class="num">{{ subject.total_present }}</td>
-                    <td class="num pct {% if p >= 75 %}good{% elif p >= 60 %}mid{% else %}low{% endif %}">{{ subject.percentage }}%</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          {% else %}
-            <div class="none">No subject attendance data available.</div>
-          {% endif %}
+            <div
+                class="user-card"
+                data-search="{{ user.username|default('') }} {{ user.email|default('') }}"
+            >
 
-        </div>
-      {% endfor %}
+                <!-- =================================================
+                     USER HEADER
+                ================================================= -->
+
+                <div class="user-header">
+
+                    <div class="user-name">
+                        {{ user.username|default('Unknown User') }}
+                    </div>
+
+                    <div class="user-email">
+                        {{ user.email|default('') }}
+                    </div>
+
+                    {% if user.scraped_at %}
+                    <div
+                        class="scraped-time"
+                        data-time="{{ user.scraped_at }}"
+                    >
+                        Last updated:
+                        {{ user.scraped_at }}
+                    </div>
+                    {% endif %}
+
+                </div>
+
+
+                <!-- =================================================
+                     STATISTICS
+                ================================================= -->
+
+                {% set stats = user.statistics|default({}) %}
+
+                <div class="stats">
+
+                    <div class="stat">
+                        <span>Total</span>
+                        <b>
+                            {{ stats.total_attendances|default(0) }}
+                        </b>
+                    </div>
+
+                    <div class="stat">
+                        <span>Present</span>
+                        <b>
+                            {{ stats.total_present|default(0) }}
+                        </b>
+                    </div>
+
+                    <div class="stat">
+                        <span>Overall</span>
+                        <b>
+                            {{ stats.overall_percentage|default(0) }}%
+                        </b>
+                    </div>
+
+                    <div class="stat">
+                        <span>Average</span>
+                        <b>
+                            {{ stats.avg_percentage|default(0) }}%
+                        </b>
+                    </div>
+
+                    <div class="stat">
+                        <span>Subjects</span>
+                        <b>
+                            {{ stats.subjects_count|default(
+                                user.total_subjects_scraped|default(0)
+                            ) }}
+                        </b>
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     OVERALL + AVERAGE 75% PLANS
+                ================================================= -->
+
+                <div class="overall-plans">
+
+                    <!-- =============================================
+                         OVERALL
+                    ============================================== -->
+
+                    <div class="overall-plan">
+
+                        <div class="overall-plan-title">
+                            Overall 75% Attendance
+                        </div>
+
+                        {% if user.overall_75.attendance_status == "safe" %}
+
+                            <div class="overall-plan-value good">
+
+                                Can miss
+                                {{ user.overall_75.can_miss }}
+
+                                {% if user.overall_75.can_miss == 1 %}
+                                    class
+                                {% else %}
+                                    classes
+                                {% endif %}
+
+                            </div>
+
+                            <div class="overall-plan-description">
+                                and still maintain 75% overall attendance
+                            </div>
+
+                        {% elif user.overall_75.attendance_status == "shortage" %}
+
+                            <div class="overall-plan-value low">
+
+                                Must attend
+                                {{ user.overall_75.must_attend }}
+
+                                {% if user.overall_75.must_attend == 1 %}
+                                    class
+                                {% else %}
+                                    classes
+                                {% endif %}
+
+                            </div>
+
+                            <div class="overall-plan-description">
+                                to reach 75% overall attendance
+                            </div>
+
+                        {% else %}
+
+                            <div class="overall-plan-value">
+                                No attendance data
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- =============================================
+                         AVERAGE
+                    ============================================== -->
+
+                    <div class="overall-plan">
+
+                        <div class="overall-plan-title">
+                            Average 75% Attendance
+                        </div>
+
+                        {% if user.average_75.attendance_status == "safe" %}
+
+                            <div class="overall-plan-value good">
+
+                                Can miss
+                                {{ user.average_75.can_miss }}
+
+                                {% if user.average_75.can_miss == 1 %}
+                                    class
+                                {% else %}
+                                    classes
+                                {% endif %}
+
+                            </div>
+
+                            <div class="overall-plan-description">
+                                and still maintain 75% average attendance
+                            </div>
+
+                        {% elif user.average_75.attendance_status == "shortage" %}
+
+                            <div class="overall-plan-value low">
+
+                                Must attend
+                                {{ user.average_75.must_attend }}
+
+                                {% if user.average_75.must_attend == 1 %}
+                                    class
+                                {% else %}
+                                    classes
+                                {% endif %}
+
+                            </div>
+
+                            <div class="overall-plan-description">
+                                to reach 75% average attendance
+                            </div>
+
+                        {% else %}
+
+                            <div class="overall-plan-value">
+                                No attendance data
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     SUBJECTS
+                ================================================= -->
+
+                {% if user.subjects %}
+
+                <div class="subjects-section">
+
+                    <div class="subjects-title">
+                        Subject-wise Attendance
+                    </div>
+
+                    <div class="table-wrapper">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>#</th>
+                                    <th>Subject</th>
+                                    <th class="num">Total</th>
+                                    <th class="num">Present</th>
+                                    <th class="num">Attendance</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {% for subject in user.subjects %}
+
+                                    {% set p = subject.percentage|float %}
+
+                                    <tr>
+
+                                        <!-- Number -->
+                                        <td>
+                                            {{ loop.index }}
+                                        </td>
+
+
+                                        <!-- Subject -->
+                                        <td>
+                                            {{ subject.subject }}
+                                        </td>
+
+
+                                        <!-- Total -->
+                                        <td class="num">
+                                            {{ subject.total_attendances|default(0) }}
+                                        </td>
+
+
+                                        <!-- Present -->
+                                        <td class="num">
+                                            {{ subject.total_present|default(0) }}
+                                        </td>
+
+
+                                        <!-- Attendance -->
+                                        <td class="attendance-cell">
+
+                                            <div
+                                                class="pct
+                                                {% if p >= 75 %}
+                                                    good
+                                                {% elif p >= 60 %}
+                                                    mid
+                                                {% else %}
+                                                    low
+                                                {% endif %}"
+                                            >
+                                                {{ subject.percentage|default(0) }}%
+                                            </div>
+
+
+                                            <!-- 75% PLAN -->
+
+                                            {% if subject.attendance_status == "safe" %}
+
+                                                <div class="attendance-plan good">
+
+                                                    Can miss
+                                                    {{ subject.can_miss }}
+
+                                                    {% if subject.can_miss == 1 %}
+                                                        class
+                                                    {% else %}
+                                                        classes
+                                                    {% endif %}
+
+                                                </div>
+
+                                            {% elif subject.attendance_status == "shortage" %}
+
+                                                <div class="attendance-plan low">
+
+                                                    Must attend
+                                                    {{ subject.must_attend }}
+
+                                                    {% if subject.must_attend == 1 %}
+                                                        class
+                                                    {% else %}
+                                                        classes
+                                                    {% endif %}
+
+                                                </div>
+
+                                            {% else %}
+
+                                                <div class="attendance-plan none">
+                                                    No classes
+                                                </div>
+
+                                            {% endif %}
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                {% else %}
+
+                    <div class="no-data">
+                        No subject attendance data available.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="no-users">
+                No attendance records found.
+            </div>
+
+        {% endif %}
+
     </div>
 
-    <div id="noResults" class="no-results">
-      <b>No users found</b>
-      Try a different username or email.
+
+    <!-- =========================================================
+         FOOTER
+    ========================================================= -->
+
+    <div class="footer">
+        Attendance Dashboard
     </div>
-  {% else %}
-    <div class="empty">
-      <b>No attendance data</b>
-      Data will appear here once available.
-    </div>
-  {% endif %}
 
 </div>
 
+
+<!-- =============================================================
+     JAVASCRIPT
+============================================================= -->
+
 <script>
-  const searchInput = document.getElementById("userSearch");
-  const cards = document.querySelectorAll(".card");
-  const noResults = document.getElementById("noResults");
 
-  if (searchInput) {
-    searchInput.addEventListener("input", function () {
-      const q = this.value.toLowerCase().trim();
-      let visible = 0;
-      cards.forEach(function (c) {
-        const ok = c.getAttribute("data-search").toLowerCase().includes(q);
-        c.style.display = ok ? "" : "none";
-        if (ok) visible++;
-      });
-      noResults.style.display = (visible === 0 && q !== "") ? "block" : "none";
-    });
-  }
+    /* =============================================================
+       SEARCH USERS
+    ============================================================= */
 
-  document.querySelectorAll(".scraped-time").forEach(function (el) {
-    const raw = el.getAttribute("data-time");
-    if (!raw) return;
-    const d = new Date(/Z|[+-]\d{2}:?\d{2}$/.test(raw) ? raw : raw + "Z");
-    if (isNaN(d.getTime())) return;
-    el.textContent = d.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit", hour12: true
-    });
-  });
+    function searchUsers() {
 
-  setInterval(function () {
-    if (document.activeElement !== searchInput && !(searchInput && searchInput.value)) location.reload();
-  }, 60000);
+        const input =
+            document.getElementById("searchInput");
+
+        const search =
+            input.value.toLowerCase().trim();
+
+        const users =
+            document.querySelectorAll(".user-card");
+
+        users.forEach(function(user) {
+
+            const text =
+                user.getAttribute("data-search")
+                .toLowerCase();
+
+            if (text.includes(search)) {
+                user.style.display = "";
+            } else {
+                user.style.display = "none";
+            }
+
+        });
+
+    }
+
+
+    /* =============================================================
+       CONVERT SCRAPED TIME TO IST
+    ============================================================= */
+
+    function convertTimesToIST() {
+
+        const elements =
+            document.querySelectorAll(".scraped-time");
+
+        elements.forEach(function(element) {
+
+            const value =
+                element.getAttribute("data-time");
+
+            if (!value) {
+                return;
+            }
+
+            const date =
+                new Date(value);
+
+            if (isNaN(date.getTime())) {
+                return;
+            }
+
+            element.textContent =
+                "Last updated: " +
+                date.toLocaleString(
+                    "en-IN",
+                    {
+                        timeZone: "Asia/Kolkata",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true
+                    }
+                ) +
+                " IST";
+
+        });
+
+    }
+
+
+    /* =============================================================
+       INITIALIZE
+    ============================================================= */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function() {
+
+            convertTimesToIST();
+
+        }
+    );
+
+
+    /* =============================================================
+       AUTO REFRESH
+       Refresh every 60 seconds
+    ============================================================= */
+
+    setInterval(
+        function() {
+            location.reload();
+        },
+        60000
+    );
+
 </script>
+
 </body>
 </html>
