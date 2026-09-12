@@ -3,18 +3,20 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Literal, get_args
 from zoneinfo import ZoneInfo
+from enum import Enum
 
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
-from fastapi import Form, FastAPI, Request
+from fastapi import FastAPI, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from pymongo import MongoClient
-from typing_extensions import Literal
+
 
 _ = load_dotenv()
 
@@ -22,9 +24,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class User(BaseModel):
-    username: str
+    email: str
     password: str
-    track: Literal["AI/ML", "SECURITY", "RESEARCH"] = "AI/ML"
+    track: str
     status: Literal["active", "inactive"] = "active"
 
 # --------------------------------------------------
@@ -61,6 +63,7 @@ client = MongoClient(
 db = client[DB_NAME]
 attendance_collection = db["attendance_results"]
 users_collection = db["users"]
+tracks_collection = db["tracks"]
 
 # --------------------------------------------------
 # GitHub workflow trigger
@@ -191,15 +194,36 @@ async def trigger_scrape_now():
 async def catch_all(full_path: str):
     return RedirectResponse("/", status_code=302)
 
+tracks = [
+    doc["track"]
+    for doc in tracks_collection.find(
+        {},
+        {"track": 1, "_id": 0}
+    )
+]
+
+
 @app.post("/add_user")
 async def add_user(
-    username: str = Form(...),
+    email: str = Form(...),
     password: str = Form(...),
-    track: Literal["AI/ML", "SECURITY", "RESEARCH", "SECURITY+OJT"] = Form(...),
+
+    track: str = Form(
+        ...,
+        json_schema_extra={"enum": tracks}
+    ),
+
     status: Literal["active", "inactive"] = Form("active"),
 ):
+    # Validate against MongoDB
+    if track not in tracks:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid track: {track}"
+        )
+
     user = User(
-        username=username,
+        email=email,
         password=password,
         track=track,
         status=status
