@@ -1,98 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Buy Me Chai ☕</title>
+    <title>Buy me a chai</title>
 
     <style>
+        :root {
+            --bg: #eef0f4;
+            --card: #ffffff;
+            --ink: #1c2430;
+            --muted: #5d6878;
+            --line: #dde1e8;
+            --well: #f6f7f9;
+            --chai: #7a3e1d;
+            --chai-dark: #5f2f15;
+            --focus: #1f6feb;
+            --ok: #1a7f4b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
+            padding: 24px 16px 40px;
+
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: system-ui, sans-serif;
-            background: #f7f7f7;
+            gap: 16px;
+
+            background: var(--bg);
+            color: var(--ink);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        a:focus-visible,
+        button:focus-visible {
+            outline: 3px solid var(--focus);
+            outline-offset: 3px;
+        }
+
+        .back {
+            width: min(100%, 400px);
+            color: var(--muted);
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .back:hover {
+            color: var(--ink);
+            text-decoration: underline;
         }
 
         .card {
-            width: min(90%, 420px);
-            padding: 30px;
-            background: white;
+            width: min(100%, 400px);
+            padding: 32px 28px 24px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            background: var(--card);
+            border: 1px solid var(--line);
             border-radius: 20px;
+            box-shadow: 0 1px 2px rgba(28, 36, 48, 0.04), 0 12px 32px rgba(28, 36, 48, 0.06);
+
             text-align: center;
         }
 
-        .chai {
-            font-size: 50px;
+        .cup {
+            width: 84px;
+            height: 84px;
+            margin-bottom: 8px;
+        }
+
+        .steam {
+            fill: none;
+            stroke: #9aa3b2;
+            stroke-width: 3;
+            stroke-linecap: round;
+            opacity: 0;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .steam {
+                animation: rise 3.2s ease-in-out infinite;
+            }
+
+            .steam:nth-of-type(2) {
+                animation-delay: 0.8s;
+            }
+
+            .steam:nth-of-type(3) {
+                animation-delay: 1.6s;
+            }
+
+            @keyframes rise {
+                0% {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+
+                40% {
+                    opacity: 0.9;
+                }
+
+                100% {
+                    opacity: 0;
+                    transform: translateY(-8px);
+                }
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .steam {
+                opacity: 0.7;
+            }
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .description {
+            max-width: 32ch;
+            margin: 10px 0 24px;
+            color: var(--muted);
+        }
+
+        .qr-frame {
+            padding: 14px;
+            background: var(--well);
+            border: 1px solid var(--line);
+            border-radius: 16px;
         }
 
         .qr {
-            width: 220px;
-            height: 220px;
-            margin: 20px auto;
             display: block;
+            width: 208px;
+            height: 208px;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .qr-caption {
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .actions {
+            width: 100%;
+            margin-top: 22px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .pay-button {
             display: block;
-            padding: 14px;
+            width: 100%;
+            padding: 14px 18px;
+
+            background: var(--chai);
+            color: #fff;
             border-radius: 12px;
-            background: #111;
-            color: white;
+
             text-decoration: none;
+            font-size: 16px;
             font-weight: 600;
+
+            transition: background 0.15s ease, transform 0.1s ease;
         }
 
         .pay-button:hover {
-            opacity: 0.85;
+            background: var(--chai-dark);
         }
 
-        .upi-id {
-            margin-top: 15px;
-            padding: 10px;
-            background: #f1f1f1;
-            border-radius: 8px;
+        .pay-button:active {
+            transform: scale(0.98);
+        }
+
+        .upi-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+
+            padding: 8px 8px 8px 14px;
+
+            background: var(--well);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+
+            text-align: left;
+        }
+
+        .upi-text {
+            min-width: 0;
             font-size: 14px;
+            color: var(--muted);
+        }
+
+        .upi-text strong {
+            display: block;
+            color: var(--ink);
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .copy {
+            flex: none;
+            padding: 9px 14px;
+
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: 9px;
+
+            font: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .copy:hover {
+            border-color: var(--muted);
+        }
+
+        .copy.done {
+            color: var(--ok);
+            border-color: var(--ok);
+        }
+
+        .note {
+            margin: 18px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* On phones the tap-to-pay button comes first, QR second */
+        @media (hover: none) and (pointer: coarse) {
+            .card {
+                align-items: stretch;
+            }
+
+            .qr-block {
+                order: 3;
+                align-self: center;
+                margin-top: 22px;
+            }
+
+            .actions {
+                order: 2;
+                margin-top: 0;
+            }
+
+            .description {
+                align-self: center;
+            }
+
+            .note {
+                order: 4;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 28px 20px 22px;
+            }
+
+            h1 {
+                font-size: 25px;
+            }
+
+            .qr {
+                width: 190px;
+                height: 190px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="card">
+    <a class="back" href="/">&larr; Back to dashboard</a>
 
-    <div class="chai">☕</div>
+    <main class="card">
 
-    <h1>Buy me a Chai</h1>
+        <svg class="cup" viewBox="0 0 84 84" role="img" aria-label="A cup of chai">
+            <path class="steam" d="M30 30 C26 24, 34 20, 30 12" />
+            <path class="steam" d="M42 30 C38 24, 46 20, 42 12" />
+            <path class="steam" d="M54 30 C50 24, 58 20, 54 12" />
+            <path d="M16 38 H68 L62 72 Q61 76 57 76 H27 Q23 76 22 72 Z" fill="#7a3e1d" />
+            <path d="M18 44 H66 L65 49 H19 Z" fill="#a8683f" />
+            <path d="M68 44 H73 Q80 44 80 51 Q80 58 73 58 H65" fill="none" stroke="#7a3e1d" stroke-width="4"
+                stroke-linecap="round" />
+        </svg>
 
-    <p>
-        Enjoying my work?
-        You can support me with a chai.
-    </p>
+        <h1>Buy me a chai</h1>
 
-    <!-- UPI QR -->
-    <img
-        class="qr"
-        src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3D{{ upi_id | urlencode }}%26pn%3D{{ name | urlencode }}%26cu%3DINR"
-        alt="UPI QR Code"
-    >
+        <p class="description">
+            This dashboard is free and I keep it running myself.
+            If it saved you time, a chai is a nice thank-you.
+        </p>
 
-    <!-- Mobile UPI button -->
-    <a
-        class="pay-button"
-        href="upi://pay?pa={{ upi_id | urlencode }}&pn={{ name | urlencode }}&cu=INR"
-    >
-        Pay with UPI
-    </a>
+        <div class="qr-block">
+            <div class="qr-frame">
+                <img class="qr" src="/buy-me-chai/qr" alt="UPI QR code for {{ upi_id }}">
+            </div>
+            <p class="qr-caption">Scan with any UPI app</p>
+        </div>
 
-    <div class="upi-id">
-        UPI ID: <strong>{{ upi_id }}</strong>
-    </div>
+        <div class="actions">
+            <a class="pay-button" href="upi://pay?pa={{ upi_id | urlencode }}&pn={{ name | urlencode }}&cu=INR">
+                Pay with UPI
+            </a>
 
-</div>
+            <div class="upi-row">
+                <div class="upi-text">
+                    UPI ID
+                    <strong id="upiId">{{ upi_id }}</strong>
+                </div>
+                <button class="copy" type="button" id="copyBtn">Copy</button>
+            </div>
+        </div>
+
+        <p class="note">
+            On a phone, tap Pay with UPI. On a computer, scan the QR code with your phone.
+        </p>
+
+    </main>
+
+    <script>
+        const copyBtn = document.getElementById("copyBtn");
+        const upiId = document.getElementById("upiId").textContent.trim();
+
+        copyBtn.addEventListener("click", async function () {
+            try {
+                await navigator.clipboard.writeText(upiId);
+                copyBtn.textContent = "Copied";
+                copyBtn.classList.add("done");
+            } catch (e) {
+                copyBtn.textContent = "Copy failed";
+            }
+
+            setTimeout(function () {
+                copyBtn.textContent = "Copy";
+                copyBtn.classList.remove("done");
+            }, 1800);
+        });
+    </script>
 
 </body>
+
 </html>

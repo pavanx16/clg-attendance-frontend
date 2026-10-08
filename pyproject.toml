@@ -15,6 +15,7 @@ dependencies = [
     "mypy>=2.3.1",
     "pymongo>=4.17.0",
     "python-dotenv>=1.2.3",
+    "qrcode[pil]>=8.2",
     "ruff>=0.16.5",
     "uvicorn[standard]>=0.52.4",
 ]

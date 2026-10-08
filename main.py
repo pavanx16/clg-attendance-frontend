@@ -5,11 +5,13 @@ import math
 import os
 from contextlib import asynccontextmanager
 from typing import Literal
+import qrcode
 
+import io
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -51,6 +53,8 @@ GITHUB_PAT = os.getenv("GITHUB_PAT")
 GITHUB_OWNER = os.getenv("GITHUB_OWNER", "pavanx16")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "githubaction")
 WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "main.yml")
+CHAI_UPI_ID = "pavanpandya016@oksbi"
+CHAI_UPI_NAME = "Pavan Rajulbhai Pandya"
 
 # ============================================================
 # Swagger / ReDoc
@@ -536,9 +540,40 @@ async def chai_page(request: Request):
         name="chai.html",
         context={
             "request": request,
-            "upi_id": "pavanpandya016@oksbi",
-            "name": "Pavan Rajulbhai Pandya",
+            "upi_id": CHAI_UPI_ID,
+            "name": CHAI_UPI_NAME,
         },
+    )
+
+
+@app.get("/buy-me-chai/qr")
+async def chai_qr():
+
+    upi_url = (
+        f"upi://pay?"
+        f"pa={CHAI_UPI_ID}"
+        f"&pn={CHAI_UPI_NAME.replace(' ', '%20')}"
+        f"&cu=INR"
+    )
+
+    qr = qrcode.QRCode(
+        version=1,
+        box_size=10,
+        border=4,
+    )
+
+    qr.add_data(upi_url)
+    qr.make(fit=True)
+
+    img = qr.make_image()
+
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="image/png",
     )
 # ============================================================
 # Catch All
