@@ -5,11 +5,8 @@ import math
 import os
 from contextlib import asynccontextmanager
 from typing import Literal
-from zoneinfo import ZoneInfo
 
 import httpx
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -49,12 +46,10 @@ DB_NAME = os.getenv("DB_NAME", "attendance_db")
 if not MONGODB_URI:
     raise ValueError("MONGODB_URI is not set in .env")
 
-
 GITHUB_PAT = os.getenv("GITHUB_PAT")
 GITHUB_OWNER = os.getenv("GITHUB_OWNER", "pavanx16")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "githubaction")
 WORKFLOW_FILE = os.getenv("WORKFLOW_FILE", "main.yml")
-
 
 # ============================================================
 # Swagger / ReDoc
@@ -260,17 +255,6 @@ async def trigger_scrape_workflow():
         logger.error(
             f"✗ Exception while triggering workflow: {error}"
         )
-
-
-# ============================================================
-# Scheduler
-# ============================================================
-
-scheduler = AsyncIOScheduler(
-    timezone=ZoneInfo("Asia/Kolkata")
-)
-
-
 # ============================================================
 # FastAPI Lifespan
 # ============================================================
@@ -318,25 +302,6 @@ async def lifespan(app: FastAPI):
     # Scheduler
     # --------------------------------------------------------
 
-    scheduler.add_job(
-        trigger_scrape_workflow,
-        CronTrigger(
-            hour="11-18",
-            minute=0,
-            timezone=ZoneInfo("Asia/Kolkata"),
-        ),
-        id="trigger_scrape",
-        replace_existing=True,
-        misfire_grace_time=300,
-    )
-
-    scheduler.start()
-
-    logger.info(
-        "✓ Scheduler started — "
-        "will trigger scrape hourly, "
-        "11:00-18:00 IST"
-    )
 
     yield
 
@@ -344,18 +309,11 @@ async def lifespan(app: FastAPI):
     # Shutdown
     # --------------------------------------------------------
 
-    scheduler.shutdown()
-
     client.close()
 
     logger.info(
         "✓ MongoDB connection pool closed"
     )
-
-    logger.info(
-        "✓ Scheduler shut down"
-    )
-
 
 # ============================================================
 # FastAPI
@@ -363,7 +321,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Attendance Dashboard",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
     docs_url=DOCS_URL,
     redoc_url=REDOC_URL,
@@ -496,30 +454,6 @@ def dashboard(request: Request):
             "users": users,
         },
     )
-
-
-# ============================================================
-# Scheduler Status
-# ============================================================
-
-@app.get("/scheduler-status")
-def scheduler_status():
-
-    jobs = scheduler.get_jobs()
-
-    return {
-        "running": scheduler.running,
-        "jobs": [
-            {
-                "id": job.id,
-                "next_run": str(
-                    job.next_run_time
-                ),
-            }
-            for job in jobs
-        ],
-    }
-
 
 # ============================================================
 # Manual Scrape Trigger
