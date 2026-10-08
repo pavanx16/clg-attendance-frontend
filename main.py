@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pymongo import MongoClient
 
@@ -330,7 +331,7 @@ app = FastAPI(
 templates = Jinja2Templates(
     directory="templates"
 )
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ============================================================
 # Dashboard
@@ -528,7 +529,17 @@ async def add_user(
         "status": "user added"
     }
 
-
+@app.get("/buy-me-chai")
+async def chai_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="chai.html",
+        context={
+            "request": request,
+            "upi_id": "pavanpandya016@oksbi",
+            "name": "Pavan Rajulbhai Pandya",
+        },
+    )
 # ============================================================
 # Catch All
 # ============================================================

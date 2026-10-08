@@ -310,30 +310,6 @@
       border-bottom:none;
     }
   }
-
-  .header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:20px;
-  }
-
-  .header .sub{
-    margin-bottom:0;
-  }
-
-  .buy-chai img{
-    display:block;
-    width:175px;
-    height:auto;
-  }
-
-  @media (max-width:600px){
-    .buy-chai img{
-      width:130px;
-    }
-  }
 </style>
 </head>
 
@@ -341,21 +317,19 @@
 
 <div class="wrap">
 
-    <div class="header">
-      <div>
-        <h1>Attendance Dashboard</h1>
-        <p class="sub">
-          {{ users|length }} user(s) &middot; updates every 15 min
-        </p>
-      </div>
+  <h1>Attendance Dashboard</h1>
 
-      <a href="/buy-me-chai" class="buy-chai">
-        <img
-          src="{{ url_for('static', path='images/hi.png') }}"
-          alt="Buy me a Chai"
-        >
-      </a>
-    </div>
+  <p class="sub">
+    {{ users|length }} user(s) &middot; updates every 15 min
+  </p>
+
+    <a href="/buy-me-chai" class="buy-chai">
+    <img
+      src="{{ url_for('static', path='images/buy-me-chai.png') }}"
+      alt="Buy me a Chai"
+      style="display:block; width:100%; max-width:900px; height:auto; margin:0 auto 20px;"
+    >
+  </a>
   {% if users %}
 
     <input

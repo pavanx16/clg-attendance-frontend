@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Buy Me Chai ☕</title>
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, sans-serif;
+            background: #f7f7f7;
+        }
+
+        .card {
+            width: min(90%, 420px);
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .chai {
+            font-size: 50px;
+        }
+
+        .qr {
+            width: 220px;
+            height: 220px;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .pay-button {
+            display: block;
+            padding: 14px;
+            border-radius: 12px;
+            background: #111;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .pay-button:hover {
+            opacity: 0.85;
+        }
+
+        .upi-id {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f1f1f1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="chai">☕</div>
+
+    <h1>Buy me a Chai</h1>
+
+    <p>
+        Enjoying my work?
+        You can support me with a chai.
+    </p>
+
+    <!-- UPI QR -->
+    <img
+        class="qr"
+        src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3D{{ upi_id | urlencode }}%26pn%3D{{ name | urlencode }}%26cu%3DINR"
+        alt="UPI QR Code"
+    >
+
+    <!-- Mobile UPI button -->
+    <a
+        class="pay-button"
+        href="upi://pay?pa={{ upi_id | urlencode }}&pn={{ name | urlencode }}&cu=INR"
+    >
+        Pay with UPI
+    </a>
+
+    <div class="upi-id">
+        UPI ID: <strong>{{ upi_id }}</strong>
+    </div>
+
+</div>
+
+</body>
+</html>
