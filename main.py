@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 import logging
 import math
 import os
@@ -14,8 +14,10 @@ from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
 
 # ============================================================
@@ -121,8 +123,27 @@ def get_tracks() -> list[str]:
     # Remove duplicates while preserving order
     return list(dict.fromkeys(tracks))
 
+def get_user() -> list[str]:
+    """
+    Get all user emails from MongoDB.
+    """
+    users = [
+        doc["email"]
+        for doc in users_collection.find(
+            {},
+            {
+                "_id": 0,
+                "email": 1,
+            },
+        )
+        if doc.get("email")
+    ]
+
+    return list(users)
+
 
 tracks = get_tracks()
+users = get_user()
 
 
 # ============================================================
@@ -297,7 +318,7 @@ async def lifespan(app: FastAPI):
                 f"    - {track}"
             )
 
-    except Exception as error:
+    except ConnectionFailure as error:
 
         logger.error(
             f"✗ MongoDB connection failed: {error}"
@@ -326,11 +347,57 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Attendance Dashboard",
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan,
     docs_url=DOCS_URL,
     redoc_url=REDOC_URL,
 )
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+
+    users = get_user()
+
+    dynamic_fields = {
+        "/delete_user": {
+            "method": "delete",
+            "field": "email",
+            "values": users,
+        },
+        "/update_user": {
+            "method": "patch",
+            "field": "email",
+            "values": users,
+        },
+    }
+
+    for path, config in dynamic_fields.items():
+        operation = schema["paths"][path][config["method"]]
+
+        for media in operation["requestBody"]["content"].values():
+            body_schema = media["schema"]
+
+            if "$ref" in body_schema:
+                name = body_schema["$ref"].split("/")[-1]
+                body_schema = schema["components"]["schemas"][name]
+
+            body_schema["properties"][config["field"]]["enum"] = (
+                config["values"]
+            )
+
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = custom_openapi
+
 
 templates = Jinja2Templates(
     directory="templates"
@@ -474,6 +541,16 @@ async def trigger_scrape_now():
         "triggered — check GitHub Actions tab"
     }
 
+# ============================================================
+# List of All User
+# ============================================================
+
+@app.get("/list_user")
+async def list_user():
+    users = list(users_collection.find({}, {"_id": 0, "email": 1, "password": 1, "track": 1}))
+    return {
+        "users": users
+    }
 
 # ============================================================
 # Add User
@@ -503,11 +580,17 @@ async def add_user(
     # Validate track
     # --------------------------------------------------------
 
-    if track not in tracks:
+    if track not in get_tracks():
 
         raise HTTPException(
             status_code=400,
             detail=f"Invalid track: {track}",
+        )
+
+    if users_collection.find_one({"email": email}):
+        raise HTTPException(
+            status_code=409,
+            detail="Email already exists",
         )
 
     # --------------------------------------------------------
@@ -529,9 +612,92 @@ async def add_user(
         user.model_dump()
     )
 
+    app.openapi_schema = None
+
     return {
         "status": "user added"
     }
+
+# ============================================================
+# Delete User
+# ============================================================
+@app.delete("/delete_user")
+async def delete_user(
+    email: str = Form(...),
+):
+    result = users_collection.delete_one({"email": email})
+
+    app.openapi_schema = None
+
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    return {
+        "status": "user deleted",
+        "email": email,
+    }
+
+# ============================================================
+# Update User
+# ============================================================
+
+@app.patch("/update_user")
+async def update_user(
+    email: str = Form(...),
+    new_email: str = Form(""),
+    new_password: str = Form(""),
+    new_track: str = Form(""),
+):
+    updates = {}
+
+    if new_email:
+        if users_collection.find_one({"email": new_email}):
+            raise HTTPException(
+                status_code=409,
+                detail="Email already exists",
+            )
+        else:
+            updates["email"] = new_email
+
+    if new_password:
+        updates["password"] = new_password
+
+    if new_track:
+        if new_track not in get_tracks():
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid track",
+            )
+        updates["track"] = new_track
+
+    if not updates:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide at least one field to update",
+        )
+
+    result = users_collection.update_one(
+        {"email": email},
+        {"$set": updates},
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    app.openapi_schema = None
+
+    return {
+        "status": "user updated",
+        "email": new_email or email,
+        "updated_fields": list(updates.keys()),
+    }
+
 
 @app.get("/buy-me-chai")
 async def chai_page(request: Request):
@@ -575,6 +741,7 @@ async def chai_qr():
         buffer,
         media_type="image/png",
     )
+
 # ============================================================
 # Catch All
 # ============================================================
